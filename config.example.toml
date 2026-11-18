@@ -1,0 +1,49 @@
+# Copy to config.toml. Streamer allowlist: only channels listed here are ever clipped.
+data_dir = "data"
+
+[stream]
+# Download quality. First available wins; ~0.9 GB/h per channel at 1080p60 (measured).
+quality = "720p60,720p,best"
+
+[retention]
+# Only clip.mp4 is deleted; meta.json and publish.json stay. 'approved' is never deleted.
+rejected_hours = 24     # video of rejected clips
+published_days = 7      # video of fully published clips
+pending_days = 3        # undecided clips (then moved to rejected, marked expired)
+min_free_gb = 2.0       # below this free space no new clip is cut
+interval_minutes = 60   # how often the running agent applies the rules
+
+[clip]
+pre_seconds = 15     # chat reacts after the event, so look further back than 10 s
+post_seconds = 20
+buffer_seconds = 120 # rolling recording kept per channel
+
+[detector]
+window_seconds = 5        # rate is measured over this window
+baseline_seconds = 120    # what "normal" chat looks like
+sigma = 3.0               # trigger above baseline mean + sigma * std
+min_ratio = 3.0           # ...and at least this many times the baseline mean
+min_messages = 8          # ...and at least this many weighted messages in the window
+cooldown_seconds = 45     # no second clip for the same channel within this time
+min_signals = 2           # chat rate is the gate; this many signals must agree (rate counts as one)
+min_unique = 8            # signal "unique": at least this many different chatters in the window ...
+min_unique_ratio = 0.5    # ... and distinct chatters / messages at least this (below = one spammer)
+min_same = 5              # signal "same": this many identical messages ...
+min_same_users = 4        # ... from at least this many different chatters
+audio_jump_db = 10.0      # signal "audio": loudness above the previous minute, in dB (6-8 fired in normal chat)
+hype_weight = 2.0         # weight of a message containing a hype term
+hype_terms = ["KEKW", "LUL", "LULW", "OMEGALUL", "POGGERS", "Pog", "PogChamp", "CLIP", "CLIPIT", "NOWAY", "W", "L"]
+
+[publish]
+platforms = ["dryrun"]          # add "youtube", "tiktok" once their adapters exist
+attempts = 3                    # tries per upload for transient errors
+base_delay = 2.0                # backoff: 2 s, 4 s, ...
+title_template = "{channel} clip #shorts"
+description_template = "Clip from twitch.tv/{channel}"
+
+[publish.daily_limits]          # uploads per platform per day; omit = unlimited
+# youtube = 6
+
+# One block per channel; use either url or name.
+[[channels]]
+url = "https://www.twitch.tv/example_channel"
