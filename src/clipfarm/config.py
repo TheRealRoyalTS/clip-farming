@@ -47,6 +47,15 @@ class DetectorConfig:
 
 
 @dataclass(frozen=True)
+class YouTubeConfig:
+    privacy: str = (
+        "private"  # private | unlisted | public. Stays private until you choose otherwise.
+    )
+    category_id: str = "20"  # 20 = Gaming
+    made_for_kids: bool = False
+
+
+@dataclass(frozen=True)
 class PublishConfig:
     platforms: tuple[str, ...] = ("dryrun",)
     daily_limits: dict[str, int] = field(default_factory=dict)  # platform -> uploads per day
@@ -54,6 +63,7 @@ class PublishConfig:
     base_delay: float = 2.0
     title_template: str = "{channel} clip #shorts"
     description_template: str = "Clip from twitch.tv/{channel}"
+    youtube: YouTubeConfig = field(default_factory=YouTubeConfig)
 
 
 @dataclass(frozen=True)
@@ -86,6 +96,8 @@ def load(path: Path) -> Config:
     if "hype_terms" in det:
         det["hype_terms"] = tuple(det["hype_terms"])
     pub = raw.get("publish", {})
+    if "youtube" in pub:
+        pub["youtube"] = YouTubeConfig(**pub["youtube"])
     if "platforms" in pub:
         pub["platforms"] = tuple(pub["platforms"])
     return Config(

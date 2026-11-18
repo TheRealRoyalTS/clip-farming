@@ -16,7 +16,7 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install
-        run: pip install -e '.[dev]'
+        run: pip install -e '.[dev,youtube]'
       - name: Lint
         run: ruff check . && ruff format --check .
       - name: Test

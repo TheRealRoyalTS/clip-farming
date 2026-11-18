@@ -10,6 +10,7 @@ dependencies = ["streamlink>=6"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.5"]
+youtube = ["google-api-python-client>=2", "google-auth-oauthlib>=1"]
 
 [project.scripts]
 clipfarm = "clipfarm.cli:main"

@@ -22,12 +22,13 @@ streamlink ─► ffmpeg ───────────┘   (the last ~2 min
 | Approval queue (`list` / `approve` / `reject`) | built, tested |
 | Retention and disk guard (`cleanup`) | built, tested |
 | Publishing pipeline: retries, daily quota, per-platform state, no double uploads | built, tested with fake adapters |
-| **YouTube Shorts and TikTok adapters** | **not built yet.** Only a `dryrun` adapter exists. |
+| YouTube Shorts adapter and `clipfarm auth youtube` login | built and tested against a fake API service. **No real upload has been run yet.** |
+| TikTok adapter | **not built yet** |
 | Instagram | not planned |
 
 Both platforms gate real public posting behind an app audit (until it passes, uploads are forced
-to private), so the adapters wait for approved credentials. Check each platform's current
-developer terms before relying on this.
+to private). YouTube uploads default to `privacy = "private"` in the config and stay private until
+you change that. Check each platform's current developer terms before relying on this.
 
 ## Responsible use
 
@@ -75,6 +76,7 @@ clipfarm [-c config.toml] run [links…]       # watch channels; record, detect,
 clipfarm list [pending|approved|rejected|published]
 clipfarm approve <id>                        # pending → approved
 clipfarm reject <id>
+clipfarm auth youtube --client-secrets client_secret.json   # one-time login, opens a browser
 clipfarm publish                             # publish all approved clips
 clipfarm cleanup [--dry-run]                 # apply the retention rules
 ```
@@ -117,6 +119,7 @@ fired on, so you can compare them with your own judgement of the clips and tune 
 | `[detector]` | `sigma`, `min_ratio`, `min_messages`, `min_signals`, … | how sensitive detection is |
 | `[retention]` | `rejected_hours`, `published_days`, `pending_days`, `min_free_gb` | what is deleted when |
 | `[publish]` | `platforms`, `daily_limits`, `attempts` | where clips go and how often |
+| `[publish.youtube]` | `privacy`, `category_id`, `made_for_kids` | upload settings; `privacy` defaults to `private` |
 | `[[channels]]` | `url` or `name` | the channels to watch |
 
 `config.toml` and the whole `data/` directory are git-ignored.
@@ -167,7 +170,7 @@ factory in `src/clipfarm/publishers/__init__.py`. Secrets come from environment 
 ## Development
 
 ```sh
-uv sync --extra dev
+uv sync --extra dev --extra youtube
 uv run pytest -q          # includes tests that run real ffmpeg
 uv run ruff check . && uv run ruff format --check .
 ```

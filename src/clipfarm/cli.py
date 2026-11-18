@@ -10,8 +10,10 @@ from pathlib import Path
 from . import chat, clipper, recorder, retention
 from .audio import AudioTracker
 from .config import Config, channel_from, load
+from .credentials import TokenStore
 from .detector import SpikeDetector
 from .pipeline import publish_approved
+from .publishers import PublishContext
 from .publishers import build as build_publishers
 from .queue import Queue
 from .quota import DailyQuota
@@ -124,6 +126,9 @@ def main() -> None:
     run = sub.add_parser("run", help="watch configured channels (or the links given)")
     run.add_argument("links", nargs="*", help="Twitch links/names; replaces the config list")
     sub.add_parser("publish", help="publish approved clips to all configured platforms")
+    au = sub.add_parser("auth", help="one-time login for a platform")
+    au.add_argument("platform", choices=["youtube"])
+    au.add_argument("--client-secrets", type=Path, required=True, help="client_secret.json")
     cl = sub.add_parser("cleanup", help="delete clip videos past their retention time")
     cl.add_argument("--dry-run", action="store_true", help="only show what would be deleted")
     ls = sub.add_parser("list", help="list clips in a state")
@@ -141,7 +146,10 @@ def main() -> None:
     elif args.cmd == "publish":
         rep = publish_approved(
             queue,
-            build_publishers(cfg.publish.platforms),
+            build_publishers(
+                cfg.publish.platforms,
+                PublishContext(TokenStore(cfg.data_dir / "secrets"), cfg.publish.youtube),
+            ),
             DailyQuota(cfg.data_dir / "state" / "quota.json", cfg.publish.daily_limits),
             title_template=cfg.publish.title_template,
             description_template=cfg.publish.description_template,
@@ -153,6 +161,11 @@ def main() -> None:
         for clip, plat, why in rep.failed + rep.skipped:
             print(f"NOT published {clip} -> {plat}: {why}")
         print(f"{len(rep.completed_clips)} clip(s) fully published")
+    elif args.cmd == "auth":
+        from .publishers.youtube import authorize
+
+        authorize(args.client_secrets, TokenStore(cfg.data_dir / "secrets"))
+        print(f"stored token in {cfg.data_dir / 'secrets' / 'youtube.json'}")
     elif args.cmd == "cleanup":
         _report(retention.expire(queue, cfg.retention, time.time(), args.dry_run), args.dry_run)
     elif args.cmd == "list":
